@@ -4,30 +4,26 @@ function CreateDatabase {
     echo "Enter the Database Name:"
     read databaseName
 
-    # find command throw error no such file or directory
-    findRes=`find DBMS/$databaseName -name $databaseName`
+    findRes=`find -name $databaseName 2>>/dev/null`
 
-    if [ "DBMS/$databaseName" = "$findRes" ]
+    if [ "./$databaseName" = "$findRes" ]
         then 
         echo "This Database name already exists"
     else
-    {
-        mkdir DBMS/$databaseName
-        echo "$databaseName database is created successfully"
-    }    
+        mkdir $databaseName
+        echo "$databaseName database is created successfully" 
     fi
 }
 
 function ListDatabase {
-    for databases in "DBMS"/*
-    do
-        if [ -d $databases ]
-            then ls DBMS
-            break
-        else
+    dbs=`ls -A | wc -l`
+
+    if [ $dbs -eq 0 ]
+        then 
             echo "No Databases found"
-        fi
-    done
+    else
+        ls -d */
+    fi
 }
 
 function CreateTable {
@@ -52,31 +48,60 @@ function CreateTable {
     fi
 }
 
+function listTables {
+    listing=`ls | wc -l`
+    if [ $listing -eq 0 ]
+        then echo "No tables found"
+    else ls
+    fi  
+}
+
 function DropTable {
     echo "Enter the table you want to drop:"
     read TableName
+    
+    flag_d=0
+    
     dropT_arr=(`ls`)
     for i in $(seq ${#dropT_arr[@]})
     do  
         if [ "${dropT_arr[i-1]}" = "$TableName" ]
         then
-            rm $TableName
-            echo "$TableName table is dropped"
-            break
-        else
-            echo "This table doesn't exist"
+            flag_d=1
         fi
     done
+
+    if [ $flag_d -eq 1 ]
+    then
+        rm $TableName
+        echo "$TableName table is dropped"
+    else
+        echo "This table name doesn't exist"
+    fi
 }
 
-function InsertTable {
+function InsertIntoTable {
     echo "Enter the table you want to insert into:"
     read TableName
+    # check if table exists
+    echo "Enter the number of table columns:"
+    read no_cols
 
-    echo "Enter the record values:"
-    read record
+    for i in $(seq $no_cols)
+    do
+        echo "Enter the name of column number $i:"
+        read col_$i
+        meta+= echo col_$i  
+    done
 
-    echo $record >> $TableName
+    # echo $col_1
+    
+    echo $meta
+
+    # echo "Enter the record values:"
+    # read record
+
+    # echo $record >> $TableName
 }
 
 function ConnectMenu {
@@ -86,34 +111,30 @@ function ConnectMenu {
     do    
     case $choice in
         "Create Table" ) CreateTable ;;
-        "List Tables" ) ls ;;
+        "List Tables" ) listTables ;;
         "Drop Table" ) DropTable ;;
-        "Insert into Table" ) InsertTable;;
+        "Insert into Table" ) InsertIntoTable;;
         "Select From Table" ) echo Select ;;
         "Delete From Table" ) echo Delete ;;
-        "Go to Main Menu" ) MainMenu ;;
+        "Go to Main Menu" ) cd .. ; MainMenu ;;
         * ) echo $REPLY is not one of the choices ;;
     esac
     done
 }
 
-
 function ConnectDatabase {
-    # cd ./D
+
     echo "Enter the Database you want to connect to:"
     read DatabaseConnect
 
-    findRes=`find $DatabaseConnect -name $DatabaseConnect`
+    findRes=`find -name $DatabaseConnect`
 
-    if [ "$DatabaseConnect" = "$findRes" ] 
+    if [ "./$DatabaseConnect" = "$findRes" ] 
         then 
             cd $DatabaseConnect
-            echo $PWD
             ConnectMenu
     else
-    {
         echo "This database doesn't exist"
-    }    
     fi
 }
 
@@ -121,18 +142,19 @@ function DropDatabase {
     echo "Enter the database you want to drop:"
     read DB
     
-    findRes=`find DBMS/$DB -name $DB`
+    findRes=`find -name $DB`
 
-    if [ "DBMS/$DB" = "$findRes" ] 
+    if [ "./$DB" = "$findRes" ] 
         then
         echo "print yes or no to confirm droping"
-            rm -Ir DBMS/$DB  
+            rm -Ir $DB  
     else
         echo "$DB database doesn't exist"
     fi
 }
 
 function MainMenu {
+    cd DBMS
     echo "Main Menu:"
     select choice in "Create Database" "List Databases" "Connect to Databases" "Drop Database" "Exit"
     do    
